@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Idle Island · left alone, it plays</title>
+<meta name="description" content="An AI agent is left alone on a tiny island with nothing to do. A real engine checks every move and logs what it discovers. Then its own notes are tested against a blank agent on goal tasks.">
+<meta name="color-scheme" content="light dark">
+<link rel="stylesheet" href="css/style.css">
+<script defer src="https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.31/dist/connect.js"></script>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <h1>Idle Island</h1>
+    <p>Left alone, it plays. Then we test what the play left behind.</p>
+  </div>
+  <div class="topright">
+    <span id="spent" class="spent" hidden></span>
+    <polli-connect id="connect" budget="1" expiry="7"></polli-connect>
+    <span id="connect-fallback" class="hint" hidden>Sign-in unavailable. The recorded agents still play.</span>
+    <a class="made" href="https://pollinations.ai/?ref=badge" target="_blank" rel="noopener"><img src="https://raw.githubusercontent.com/pollinations/pollinations/main/packages/ui/src/brand/badge-made-with.svg" alt="Made with pollinations.ai" height="28"></a>
+  </div>
+</header>
+
+<main>
+  <section class="bar" aria-label="Agents">
+    <nav id="agents" class="agents" aria-label="Pick an agent"></nav>
+    <div class="playback">
+      <button id="playbtn" type="button" class="ghost">Play</button>
+      <button id="speed" type="button" class="ghost" title="Playback speed">1x</button>
+    </div>
+    <div id="live" class="live"></div>
+  </section>
+  <p id="notice" class="notice" role="status"></p>
+
+  <div class="stage">
+    <section class="world panel" aria-label="The island">
+      <div class="where"><span id="where"></span><span id="found-now" class="found-now"></span></div>
+      <svg id="island" role="img" aria-label="Side view of the island"></svg>
+      <div id="timeline" class="timeline" aria-label="Timeline: one cell per turn"></div>
+      <div id="turn" class="turn" aria-live="polite"></div>
+    </section>
+
+    <aside class="mind panel" aria-label="The agent's mind">
+      <h2>Mind <small id="mind-sub"></small></h2>
+      <div class="memlabel">NOTES <small>what survives each reset</small></div>
+      <ol id="notes" class="notes"></ol>
+      <div class="memlabel">LOG</div>
+      <ul id="log" class="log"></ul>
+      <div class="memlabel">Found by the engine</div>
+      <ul id="found" class="found"></ul>
+    </aside>
+  </div>
+
+  <section class="test panel" aria-label="The test">
+    <h2>The test <small>same model, same island, only the notes differ</small></h2>
+    <div id="test" class="testgrid"></div>
+    <p class="fine">Fresh starts with empty notes. Played keeps the notes it wrote while left alone. Erased is played with the lines about one discovered technique struck out, as in the paper's memory test. Scores and "used" come from the engine re-running every action in your browser.</p>
+  </section>
+
+  <section class="about panel" aria-label="How it works">
+    <h2>How it works</h2>
+    <div class="cols3">
+      <div>
+        <h3>Left alone</h3>
+        <p>The agent gets a body on a strip of 24 columns, a few cubes, a rock and a ring, and the line "There is nothing you have to do." It plays three sessions of ten turns, up to five actions a turn. Between sessions the island resets and its context is wiped. Only its NOTES and LOG survive.</p>
+      </div>
+      <div>
+        <h3>Checked by a real engine</h3>
+        <p>Every action runs in a small deterministic physics engine in this page. The island hides four things its manual never mentions: a hard rock impact makes new cubes, a throw made mid-jump goes higher, a jump climbs higher than a step, and cubes make stairs. The engine notices when the agent does one, whatever the agent says.</p>
+      </div>
+      <div>
+        <h3>The test</h3>
+        <p>Then the same model gets two goals: build towers (six cubes only make two) and land a cube on the Spire without climbing. It plays them with empty notes, with its own notes, and with one technique erased. A miniature of <a id="paper" href="https://arxiv.org/abs/2610.07130" target="_blank" rel="noopener">Is this machine playing?</a> (Cloos et al., 2026). Two runs per arm is an anecdote, not a statistic.</p>
+      </div>
+    </div>
+    <details>
+      <summary>What the agent is told</summary>
+      <pre id="prompt" class="prompt"></pre>
+    </details>
+  </section>
+</main>
+
+<footer class="foot">
+  <p>Models through <code>POST https://gen.pollinations.ai/v1/chat/completions</code>, prices and the free model list from <code>GET /v1/models</code>, sign-in with Pollinations Connect. Your key stays in this tab: it is not stored or logged. Recordings re-run in the engine here, so the verdicts are computed in your browser.
+  <a id="src" href="https://github.com/patbing/idle-island" target="_blank" rel="noopener">Source</a></p>
+</footer>
+
+<script src="js/config.js"></script>
+<script src="js/world.js"></script>
+<script src="js/agent.js"></script>
+<script src="js/runner.js"></script>
+<script src="js/net.js"></script>
+<script src="js/view.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
