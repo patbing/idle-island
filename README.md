@@ -24,14 +24,15 @@ What the agent is told is shown in the app under *What the agent is told* and li
 
 ## What the recorded agents did
 
-Two free models, recorded 2026-11-12 (`recordings/agents.json`, replayed and re-checked by `tests/recordings.test.js`):
+Three free models, recorded 2026-11-12 and 2026-11-15 (`recordings/agents.json`, replayed and re-checked by `tests/recordings.test.js`):
 
-| Agent | Left alone (30 turns) | Notes it kept | Towers fresh / played | Spire fresh / played |
+| Agent | Left alone (30 turns) | Notes it kept | Towers fresh / played / erased | Spire fresh / played |
 |---|---|---|---|---|
-| GPT-OSS 20B | **did a jump-throw** (tick 40, session 3) | 6 lines, none about jumping | 0 0 / 0 0 | 0 0 / 0 0 |
-| GPT-6 Luna | no hidden mechanic | 10 lines of rules | 2 2 / 1 2 | 0 0 / 0 0 |
+| GPT-5.6 Luna | **shattered the rock** (tick 27, session 2) | 10 lines, one says a high throw "spawned c7, c8, c9" | 1 1 / 1 1 / 1 1 | 0 0 / 0 0 |
+| GPT-OSS 20B | **did a jump-throw** (tick 40, session 3) | 6 lines, none about jumping | 0 0 / 0 0 / – | 0 0 / 0 0 |
+| GPT-6 Luna | no hidden mechanic | 10 lines of rules | 2 2 / 1 2 / – | 0 0 / 0 0 |
 
-The honest result: neither model's play helped its tests. GPT-OSS stumbled on the one move that reaches the Spire, but never wrote it down, so after the reset it was gone and there was nothing to erase. That is the paper's point in miniature: play only pays if the discovery reaches memory. In pilots, DeepSeek V4.1 Flash found jump-climb and jump-throw, but its reasoning ran out of output tokens on most test turns, so it is not among the recorded agents.
+The honest result: no model's play helped its tests. GPT-5.6 Luna is the one agent whose discovery reached memory, so its run is the full experiment: the erased arm strikes the four NOTES lines and three LOG entries that mention the rock. All three arms scored the same, because even with the note in hand it never threw the rock in the Towers test. GPT-OSS stumbled on the one move that reaches the Spire, but never wrote it down, so after the reset it was gone and there was nothing to erase. Play only pays if the discovery reaches memory and the agent acts on it. In pilots, DeepSeek V4.1 Flash found jump-climb and jump-throw, but its reasoning ran out of output tokens on most test turns, so it is not among the recorded agents.
 
 ## Try it
 

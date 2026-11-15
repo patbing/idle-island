@@ -2,6 +2,7 @@
 //   POLLINATIONS_KEY=sk_... node tools/record.mjs pilot [maxPollen]          3 models x 1 play session -> recordings/pilot.json
 //   POLLINATIONS_KEY=sk_... node tools/record.mjs full maxPollen model1 model2 ...   one agent per model, play then tests -> recordings/agents.json
 //   POLLINATIONS_KEY=sk_... node tools/record.mjs retest maxPollen                  keep the recorded plays, record every agent's tests again
+//   POLLINATIONS_KEY=sk_... node tools/record.mjs adopt maxPollen pilotFile index   add a pilot play as a new agent, recording only its tests
 // Stops as soon as the running cost (usage x listed prices) passes maxPollen.
 import { createRequire } from 'node:module';
 import { writeFileSync, readFileSync, existsSync } from 'node:fs';
@@ -20,7 +21,10 @@ const list = (await (await fetch(API + '/v1/models')).json()).data;
 const info = Object.fromEntries(list.map((m) => [m.id, m]));
 // pilot: [maxPollen] [sessions] [model...]
 const pilotSessions = mode === 'pilot' && /^\d+$/.test(modelArgs[0] || '') ? Number(modelArgs.shift()) : 1;
-const models = mode === 'pilot' ? (modelArgs.length ? modelArgs : PILOT_MODELS) : modelArgs;
+const pilotFile = mode === 'adopt' ? JSON.parse(readFileSync(new URL('../recordings/' + modelArgs[0], import.meta.url), 'utf8')) : null;
+if (pilotFile && pilotFile.promptHash !== A.promptHash) { console.error('pilot was recorded with a different prompt'); process.exit(1); }
+const adopted = pilotFile ? pilotFile.agents[Number(modelArgs[1])] : null;
+const models = mode === 'pilot' ? (modelArgs.length ? modelArgs : PILOT_MODELS) : adopted ? [adopted.model.id] : modelArgs;
 for (const id of models) {
   if (!info[id]) { console.error('model not listed: ' + id); process.exit(1); }
   if (info[id].paid_only) { console.error('paid-only model refused: ' + id); process.exit(1); }
@@ -45,6 +49,8 @@ function asker(id, sink) {
         const j = await res.json().catch(() => null);
         const ms = Date.now() - t0;
         if (!res.ok) {
+          // Some providers reject reasoning_effort "low" outright (unbilled); send once more without it.
+          if (res.status === 400 && body.reasoning_effort && /reasoning_effort/.test(j?.error?.message || '')) { delete body.reasoning_effort; attempt--; continue; }
           if (attempt === 0 && (res.status === 429 || res.status >= 500)) { await new Promise((r) => setTimeout(r, 3000)); continue; }
           // Failed calls can still be billed (an exhausted output limit is), so the cap counts them at worst case.
           spent += worst(id);
@@ -86,7 +92,7 @@ if (mode === 'pilot') {
     console.log('   notes: ' + JSON.stringify(play.memory.notes).slice(0, 400));
     out.agents.push({ model: { id, title: info[id].title || id }, play: turns, stop: play.stop });
   }));
-  writeFileSync(new URL('../recordings/pilot.json', import.meta.url), JSON.stringify(out, null, 1) + '\n');
+  writeFileSync(new URL('../recordings/' + (process.env.PILOT_OUT || 'pilot.json'), import.meta.url), JSON.stringify(out, null, 1) + '\n');
 } else if (mode === 'retest') {
   // Keep each recorded play (replayed through the engine, no calls) and record its tests again.
   const file = new URL('../recordings/agents.json', import.meta.url);
@@ -119,7 +125,9 @@ if (mode === 'pilot') {
     if (over) break;
     const n = out.agents.length + 1, turns = [];
     console.log(`agent ${n}: ${id} playing...`);
-    const play = await R.play(asker(id, turns), {});
+    let k = 0;
+    if (adopted) turns.push(...adopted.play);
+    const play = adopted ? await R.play(async () => (k < turns.length ? turns[k++] : null), {}) : await R.play(asker(id, turns), {});
     console.log('  ' + summary(play));
     const erase = A.pickErase(play.found, play.memory);
     const runs = R.plan(erase);
